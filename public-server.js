@@ -14,7 +14,7 @@ const wss = new WebSocket.Server({ server });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public-frontend'));
 
 // Store active sessions with their API keys (in-memory)
 // In production, use Redis or similar for persistence
@@ -506,7 +506,8 @@ setInterval(() => {
 }, 3600000);
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+// Dodano '0.0.0.0' w funkcji listen - kluczowe dla chmury!
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 AgentPulse server running on port ${PORT}`);
     console.log(`📊 WebSocket server ready`);
     console.log(`\n✅ Public mode enabled - users can provide their own API keys`);
