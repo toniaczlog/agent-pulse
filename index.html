@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentPulse - AI Agents Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 10px 16px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        h1 {
+            color: #1a202c;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .logo {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #718096;
+        }
+
+        .settings-btn {
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .settings-btn:hover {
+            background: #5568d3;
+        }
+
+        .settings-btn.unconfigured {
+            background: #f56565;
+            animation: pulse-btn 2s infinite;
+        }
+
+        @keyframes pulse-btn {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #718096;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #48bb78;
+            animation: pulse-dot 2s infinite;
+        }
+
+        .status-dot.disconnected {
+            background: #f56565;
+            animation: none;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Settings Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            color: #1a202c;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #718096;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .api-key-section {
+            margin-bottom: 20px;
+        }
+
+        .api-key-section h3 {
+            font-size: 14px;
+            color: #1a202c;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .api-key-section .badge {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .badge.configured {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .badge.not-configured {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .api-key-section p {
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .api-key-section a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .api-key-section a:hover {
+            text-decoration: underline;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 4px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+
+        .save-btn:hover {
+            background: #5568d3;
+        }
+
+        .save-btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+        }
+
+        .info-box {
+            background: #ebf8ff;
+            border: 1px solid #bee3f8;
+            border-radius: 4px;
+            padding: 12px;
+            margin-top: 16px;
+            font-size: 12px;
+            color: #2c5282;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Rest of the styles from previous version */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 12px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .task-input-section {
+            background: white;
+            border-radius: 6px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .task-input-section h2 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #1a202c;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .agent-selector {
+            display: flex;
+            gap: 6px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .agent-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .agent-btn:hover:not(:disabled) {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+
+        .agent-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .agent-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: #5568d3;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .agent-card {
+            background: white;
+            border-radius: 6px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            transition: all 0.15s;
+        }
+
+        .agent-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+        }
+
+        .agent-card.disabled {
+            opacity: 0.5;
+        }
+
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .agent-info h3 {
+            color: #1a202c;
+            font-size: 14px;
+            margin-bottom: 2px;
+            font-weight: 600;
+        }
+
+        .agent-type {
+            color: #718096;
+            font-size: 11px;
+        }
+
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .status-active {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-idle {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .status-working {
+            background: #feebc8;
+            color: #7c2d12;
+            animation: pulse 2s infinite;
+        }
+
+        .status-disabled {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .current-task {
+            background: #f7fafc;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            border-left: 2px solid #667eea;
+            min-height: 60px;
+        }
+
+        .task-title {
+            font-size: 12px;
+            color: #1a202c;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .task-empty {
+            font-size: 12px;
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        .agent-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 6px 4px;
+            background: #f7fafc;
+            border-radius: 4px;
+        }
+
+        .metric-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #667eea;
+            line-height: 1;
+        }
+
+        .metric-label {
+            font-size: 9px;
+            color: #718096;
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .activity-log {
+            background: white;
+            border-radius: 6px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .activity-log h2 {
+            color: #1a202c;
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .log-entry {
+            padding: 6px 8px;
+            border-left: 2px solid #e2e8f0;
+            margin-bottom: 4px;
+            background: #f7fafc;
+            border-radius: 3px;
+            transition: background 0.15s;
+        }
+
+        .log-entry:hover {
+            background: #edf2f7;
+        }
+
+        .log-entry.new {
+            animation: slideIn 0.2s ease-out;
+            border-left-color: #667eea;
+        }
+
+        .log-entry.error {
+            border-left-color: #f56565;
+            background: #fff5f5;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-time {
+            font-size: 10px;
+            color: #718096;
+            margin-bottom: 2px;
+        }
+
+        .log-message {
+            font-size: 12px;
+            color: #1a202c;
+            line-height: 1.3;
+        }
+
+        .log-agent {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            transition: all 0.15s;
+        }
+
+        .btn-secondary {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #e2e8f0;
+            color: #1a202c;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .response-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .response-modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .response-text {
+            background: #f7fafc;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #1a202c;
+            white-space: pre-wrap;
+        }
+
+        .response-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
+            color: #718096;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>
+                <div class="logo">🤖</div>
+                AgentPulse
+            </h1>
+            <div class="header-right">
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="activeCount">0</div>
+                        <div class="stat-label">aktywne</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalTasks">0</div>
+                        <div class="stat-label">zadania</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalCost">$0.00</div>
+                        <div class="stat-label">koszt</div>
+                    </div>
+                </div>
+                <button class="settings-btn unconfigured" id="settingsBtn" onclick="openSettings()">
+                    ⚙️ Konfiguracja
+                </button>
+                <div class="connection-status">
+                    <div class="status-dot" id="connectionDot"></div>
+                    <span id="connectionText">Łączenie...</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-grid">
+            <div class="left-panel">
+                <div class="task-input-section">
+                    <h2>🎯 Nowe zadanie</h2>
+                    <textarea id="taskPrompt" placeholder="Wpisz prompt dla AI..."></textarea>
+                    <div class="agent-selector" id="agentSelector">
+                        <button class="agent-btn" data-agent="claude" disabled>Claude</button>
+                        <button class="agent-btn" data-agent="gpt4" disabled>GPT-4</button>
+                        <button class="agent-btn" data-agent="gemini" disabled>Gemini</button>
+                        <button class="agent-btn" data-agent="all" disabled>Wszystkie (porównaj)</button>
+                    </div>
+                    <button class="submit-btn" id="submitTask" disabled>Wyślij zadanie</button>
+                </div>
+
+                <div class="agents-grid" id="agentsGrid"></div>
+            </div>
+
+            <div class="activity-log">
+                <h2>📊 Dziennik aktywności</h2>
+                <div class="controls">
+                    <button class="btn-secondary" onclick="clearStats()">Reset statystyk</button>
+                </div>
+                <div id="activityLog" style="margin-top: 10px; max-height: calc(100vh - 220px); overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>⚙️ Konfiguracja kluczy API</h2>
+                <button class="close-btn" onclick="closeSettings()">&times;</button>
+            </div>
+
+            <div class="api-key-section">
+                <h3>
+                    Claude (Anthropic)
+                    <span class="badge not-configured" id="claudeBadge">Nie skonfigurowano</span>
+                </h3>
+                <p>Zdobądź klucz API: <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></p>
+                <div class="input-group">
+                    <label>Klucz API</label>
+                    <input type="password" id="anthropicKey" placeholder="sk-ant-...">
+                </div>
+            </div>
+
+            <div class="api-key-section">
+                <h3>
+                    GPT-4 (OpenAI)
+                    <span class="badge not-configured" id="openaiBADGE">Nie skonfigurowano</span>
+                </h3>
+                <p>Zdobądź klucz API: <a href="https://platform.openai.com/" target="_blank">platform.openai.com</a></p>
+                <div class="input-group">
+                    <label>Klucz API</label>
+                    <input type="password" id="openaiKey" placeholder="sk-...">
+                </div>
+            </div>
+
+            <div class="api-key-section">
+                <h3>
+                    Gemini (Google)
+                    <span class="badge not-configured" id="googleBadge">Nie skonfigurowano</span>
+                </h3>
+                <p>Zdobądź klucz API: <a href="https://makersuite.google.com/app/apikey" target="_blank">makersuite.google.com</a></p>
+                <div class="input-group">
+                    <label>Klucz API</label>
+                    <input type="password" id="googleKey" placeholder="AI...">
+                </div>
+            </div>
+
+            <button class="save-btn" onclick="saveApiKeys()">Zapisz klucze</button>
+
+            <div class="info-box">
+                <strong>🔒 Bezpieczeństwo</strong>
+                Twoje klucze API są przechowywane tylko w pamięci serwera i nigdy nie są zapisywane na dysku. 
+                Sesja wygasa po godzinie bezczynności. Możesz w każdej chwili zmienić lub usunąć klucze.
+            </div>
+        </div>
+    </div>
+
+    <!-- Response Modal -->
+    <div class="response-modal" id="responseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Odpowiedź</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="response-text" id="responseText"></div>
+            <div class="response-meta" id="responseMeta"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
