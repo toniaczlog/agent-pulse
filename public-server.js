@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const WebSocket = require('ws');
 const http = require('http');
+const path = require('path');
 require('dotenv').config();
 
 const Anthropic = require('@anthropic-ai/sdk');
@@ -14,7 +15,7 @@ const wss = new WebSocket.Server({ server });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public-frontend'));
+app.use(express.static(path.join(__dirname, 'public-frontend')));
 
 // Store active sessions with their API keys (in-memory)
 // In production, use Redis or similar for persistence
